@@ -1,0 +1,121 @@
+# TradingView Bybit Strategy Scanner
+# Add your strategy chart URLs below. Each strategy gets its own Excel file.
+# export_link: shown in Excel/HTML instead of TradingView URL.
+#
+# interval: optional, for `python run_scan.py` only — adds ?interval= to the chart URL (minutes).
+# The Watchlist desktop app queue ignores interval and always uses your saved chart URL as-is.
+# Remove interval lines to use the raw URL only (dismiss logic still closes TV dialogs).
+
+strategies:
+  - url: "https://www.tradingview.com/chart/HfEyBinY/"
+    name: "New Smart Money IWM"
+    interval: 15
+    export_link: "https://daviddtech.com/strategy/phyu2-inactive-newsmartmoney-ishares2000etf-15m-28-05-copy/"
+  - url: "https://www.tradingview.com/chart/LBoiobjR/"
+    name: "Stiff Surge AERO (LB)"
+    interval: 45
+    export_link: "https://daviddtech.com/strategy/saidrobley-stiffsurge-aerousdt-45m-29-07-2025-copy/"
+  - url: "https://www.tradingview.com/chart/LwyVtrsX/"
+    name: "T3NEXUS+STIFF XLM"
+    interval: 60
+    export_link: "https://daviddtech.com/strategy/zorbathegreek-t3nexusstiff-xlmusdt-1h-18-03-2025-copy/"
+  - url: "https://www.tradingview.com/chart/cIr0dy6n/"
+    name: "Stiff Surge AERO (re-run)"
+    interval: 45
+    export_link: "https://daviddtech.com/strategy/saidrobley-stiffsurge-aerousdt-45m-29-07-2025-copy/"
+  # (CLI only) interval: N if you use run_scan.py and want ?interval= on the URL.
+  - url: "https://www.tradingview.com/chart/VXl2EKda/"
+    name: "VXl2EKda chart"
+
+# Test mode: only run on 4 pairs (BTC, ETH, SOL, DOGE) - set to false for full run
+test_mode: false
+
+# Max pairs to process per strategy (null = all). Applied after market-cap filter if set.
+max_pairs: null
+
+# Phase 1: only scan pairs whose base coin is in top N by market cap (null = all Bybit USDT perps).
+# Uses coinmarketcap_api_key when market_cap_provider is "coinmarketcap"; otherwise CoinGecko (free / cache).
+phase1_market_cap_top_n: 300
+
+# Delay in seconds between symbol changes (base wait)
+delay_between_symbols_sec: 3
+
+# Wait after each symbol change before reading metrics (lower = faster; raise if TV lags).
+wait_after_symbol_change_sec: 5
+
+# Use chart URL (?symbol=) for every pair — one navigation, no header search + URL "double pick".
+# Set false to try header symbol search first (more human-like; can be slower if TV blocks it).
+prefer_url_symbol_change: true
+# Ms to wait after URL symbol navigation (TV Strategy Tester to catch up)
+url_symbol_settle_ms: 2600
+
+# Phase 1 speed tuning (only when backtest_date_range is range_from_chart). Set false for safer, slower waits.
+phase1_fast_mode: true
+# Optional overrides in ms (null = use fast/conservative defaults from main.py)
+# Lower = faster; if TV shows empty metrics or "not ready", raise these slightly.
+chart_initial_wait_ms: null
+backtest_ready_poll_ms: null
+backtest_ready_stability_ms: null
+
+# --- Speed (desktop UI + CLI) ---
+# Per pair you roughly pay: url_symbol_settle_ms + (poll loop) + delay_between_symbols + wait_after_symbol_change.
+# Aggressive example (test on a few pairs first): delay_between_symbols_sec: 2, wait_after_symbol_change_sec: 3,
+# url_symbol_settle_ms: 2000, and set chart_initial_wait_ms / backtest_ready_* to 3200 / 400 / 700.
+# Fewer symbols: use Phase 1 "Top 300" in the app, or lower phase1_market_cap_top_n — "All pairs" is much slower.
+# Deep backtest (Phase 2) re-runs each survivor on full history — leave unchecked unless you need it.
+
+# Full-page PNG after navigate + after each symbol when backtest is ready (uses disk; set false to disable)
+debug_screenshots: false
+debug_screenshots_dir: "output/scan_screenshots"
+# false = viewport only (faster); true = full scroll capture (slower, huge files on TV)
+debug_screenshots_full_page: false
+
+# Delay between strategies (optional, to avoid rate limits)
+delay_between_strategies_sec: 5
+
+# Per-pair watchdog: if change symbol + metrics takes longer than this (seconds), reload the chart URL once
+# and retry the same pair. Set 0 to disable. (Helps recover from TradingView / browser hangs.)
+pair_stall_timeout_sec: 420
+
+# After every N pair attempts (same chart), reload the strategy URL + date range — reduces TV/Chrome
+# slowdowns on long headless queue runs. Cost: extra ~15–40s per refresh. 0 = disable.
+chart_soft_refresh_every_n_pairs: 150
+
+# Output directory for Excel files
+output_dir: "output"
+
+# Run browser in headless mode (false = visible, good for debugging). UI defaults to headless on.
+headless: true
+# Use "chrome" to launch your installed Chrome (avoids Google "browser not secure" when using Continue with Google)
+# Leave empty for Playwright's Chromium (may be blocked by Google sign-in)
+browser_channel: "chrome"
+
+# Pause at start for manual TradingView login (opens TV homepage, wait to log in)
+pause_for_manual_login: true
+# Seconds to wait for you to log in (increase if you need more time, e.g. 180)
+login_wait_seconds: 90
+# Save session after login (path is under the app folder, not "current directory" — important for the UI worker)
+storage_state_path: "config/tv_session.json"
+
+# Backtest date range: "range_from_chart" (default), "entire_history", "last_7_days", "last_30_days", "last_90_days", "last_365_days"
+# Use "range_from_chart" for normal scan (chart's date range). Use "entire_history" for deep backtest.
+backtest_date_range: "range_from_chart"
+
+# Market cap source for Phase 1 + Pass 2: "coingecko" (no key) or "coinmarketcap" (set API key below)
+market_cap_provider: "coingecko"
+# CoinMarketCap Pro key: https://coinmarketcap.com/api/ — when set and provider is "coinmarketcap", rankings match CMC
+coinmarketcap_api_key: ""
+
+# --- Desktop UI (run_ui.py) ---
+# window_start: maximized (default, fills screen with taskbar) | fullscreen (borderless) | normal
+ui:
+  window_start: maximized
+
+# Queue tab: when true, a job row is removed after Phase 1 (and Phase 2 if enabled) completes successfully.
+# Scan outputs in output_dir are not deleted — only the queue list entry.
+queue:
+  auto_remove_on_success: true
+
+# Pass 2 (deep backtest): which Pass 1 rows qualify for Entire history re-run
+pass2:
+  min_trades: 50

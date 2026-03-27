@@ -1,0 +1,13 @@
+# Bulk queue import — one entry per line (UTF-8).
+# Lines starting with # are ignored.
+#
+# Format A: TradingView chart URL only
+https://www.tradingview.com/chart/AbCdEfGh/
+#
+# Format B: display name | URL (pipe)
+My strategy label|https://www.tradingview.com/chart/XyZaBcDe/
+#
+# Format C: name then TAB then URL
+Another chart	https://www.tradingview.com/chart/MnOpQrSt/
+#
+# Optional CSV instead (see queue_import_example.csv).

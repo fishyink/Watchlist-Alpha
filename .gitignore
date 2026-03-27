@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist-packages/
+.venv/
+venv/
+env/
+
+# App output & local state
+output/
+data/
+*.db
+
+# TradingView browser session (never commit)
+config/tv_session.json
+
+# PyInstaller
+build/
+dist/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
