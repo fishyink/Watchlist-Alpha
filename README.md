@@ -1,22 +1,38 @@
 # Watchlist Alpha
 
 <p align="center">
-  <a href="https://trade-harbour.com.au/tools?tool=watchlist-alpha"><strong>See Watchlist Alpha in action — Trade-Harbour demo</strong></a>
+  <a href="https://trade-harbour.com.au/tools?tool=watchlist-alpha"><strong>See Watchlist Alpha on Trade-Harbour (demo)</strong></a>
   <br /><br />
   <sub>TradingView Strategy Tester automation · Bybit USDT perpetuals · queue, run, export to Excel</sub>
 </p>
 
-## What it does
+You give it TradingView chart links with your strategy already on the chart. It walks through Bybit USDT perpetual pairs, pulls Strategy Tester numbers, and drops them into Excel. Built for Windows.
 
-Watchlist Alpha is a **Windows desktop app** (with an optional **command-line** mode for automation) that uses your **TradingView Plus** (or higher) plan and **automates Strategy Tester** for charts you already set up.
+---
 
-You add **TradingView chart links** where **your strategy is on the chart** and the date range is as you want it. The tool then:
+## What this does
 
-- **Cycles through Bybit USDT perpetual pairs** (or a **top 300 by market cap** list, if you choose that instead of “all pairs”).
-- **Runs or refreshes the backtest** for each symbol and **reads the metrics** TradingView shows (e.g. net profit, drawdown, Sharpe, Sortino, win rate, and related stats).
-- **Exports results to Excel** (one workbook pattern per strategy run), with **incremental saves** so long runs survive crashes. HTML output can also be produced depending on your workflow.
+- **Windows desktop app** is the main path. Queue charts, run batches, open results in the UI.
+- **CLI** (`run_scan.py`, `run_deep_scan.py`) is optional if you want scripts or automation.
+- You paste **chart URLs** where the strategy is already loaded. Date range comes from what you set on the chart.
+- It scans **Bybit USDT perp** symbols (or a **top 300 market cap** slice if you choose that in the queue).
+- It reads **Strategy Tester** metrics from TradingView (profit, drawdown, ratios, win rate, and the rest).
+- It saves to **Excel** in `output/`, one file pattern per strategy run, with incremental saves so a crash does not wipe progress.
 
-The **desktop UI** gives you a **queue** (line up many charts), **runs** (start/stop, progress, resume after restart), and a **results** area to open output files. You can do the same scanning **without the UI** via `run_scan.py` / `run_deep_scan.py` if you prefer scripts.
+---
+
+## Quick start
+
+Do these in order the first time.
+
+1. Install **Python 3.10+** from [python.org](https://www.python.org/downloads/). Enable **Add to PATH** or confirm `py` works in a terminal.
+2. Double-click **`install_prerequisites.bat`** once. Wait until it finishes (pip + Playwright Chromium).
+3. Double-click **`run.bat`** to open the app.
+4. Open the **Runs** tab. Use the **Log into TradingView** step (Step 1 on that screen). Finish sign-in in the browser window. Wait until the app shows a saved session (see **First run checklist** below).
+5. Add one chart in the **Queue**, then start a **small** run with **headless off** so you can see the browser. Confirm rows land in **`output/`**.
+6. After that works, turn **headless** on if you want long unattended runs. The app expects a saved session before headless **Start**.
+
+`run.bat` only launches the UI. **`install_prerequisites.bat`** is what installs dependencies.
 
 ---
 
@@ -24,166 +40,99 @@ The **desktop UI** gives you a **queue** (line up many charts), **runs** (start/
 
 | | |
 |--|--|
-| **TradingView** | **Plus** or higher (Strategy Tester requires a paid plan). |
-| **Windows** | Desktop app targets Windows (Python install or packaged `.exe`). |
-| **Browser** | **Google Chrome** is recommended (`browser_channel: "chrome"` in config helps with Google sign-in). Playwright’s Chromium is used if you don’t use Chrome. |
-| **Python** | `3.10+` only when running from source. Not needed if you use a shared **`WatchlistScanner.exe`** build. |
+| **TradingView** | Paid plan that includes Strategy Tester (Plus or higher). |
+| **Windows** | Desktop workflow is built for Windows. |
+| **Chrome** | Recommended. `browser_channel: "chrome"` in `config/config.yaml` helps with Google sign-in. |
+| **Python** | Only if you run from source. Not needed if you use a packaged **`WatchlistScanner.exe`**. |
 
 ---
 
-## Install once, then run
+## First run checklist
 
-| Step | What to do |
-|------|------------|
-| **1. Python** | Install from [python.org](https://www.python.org/downloads/) and enable **Add to PATH** (or ensure the **`py`** launcher works). |
-| **2. Dependencies** | Double-click **`install_prerequisites.bat`** *once*. It runs `pip install -r requirements.txt` and `playwright install chromium`. |
-| **3. App** | Double-click **`run.bat`** whenever you want to open the UI (`run_ui.py` is the same program from a terminal). |
-
-`run.bat` only starts the app — it does not install packages. Use **`install_prerequisites.bat`** after cloning or updating dependencies.
-
----
-
-## Log in to TradingView (before your first real run)
-
-The app needs a saved TradingView session to drive the browser reliably — especially if you want **headless** runs (no window).
-
-1. Open the app (**`run.bat`** or `python run_ui.py`).
-2. Go to the **Runs** tab.
-3. Click **Step 1 — Log into TradingView**. A **visible** Chrome window opens (this step is never headless).
-4. Sign in to TradingView as you normally would (email, Google, etc.). You have about **90 seconds** by default; if that’s tight, raise **`login_wait_seconds`** in `config/config.yaml`.
-5. Wait until the status line says something like **Session saved** (or check that **`config/tv_session.json`** exists). That file is your logged-in cookies — keep it private; do not commit it to git.
-
-If login times out, click **Step 1** again and complete sign-in faster, or increase **`login_wait_seconds`**.
+- [ ] Strategy is already on the chart in TradingView, range set how you want it.
+- [ ] Copy the **chart URL** from the browser (not just a symbol page).
+- [ ] Paste into **Queue** in the app (or import from `config/config.yaml` if you use YAML).
+- [ ] **Runs** tab: TradingView **login step** completed, session file present (see `storage_state_path` in `config/config.yaml`, default `config/tv_session.json`). Do not commit that file.
+- [ ] First scan is **small** and **visible** (headless off) so you know it is alive.
+- [ ] Open **`output/`** and confirm a new **`.xlsx`**.
 
 ---
 
-## Headless: when to show the browser vs hide it
+## Results
 
-| Mode | What it’s for |
-|------|----------------|
-| **Visible browser** (`Run headless` **OFF** on the Runs tab) | Easiest way to **see** what TradingView is doing: first-time setup, debugging, or if a run gets stuck (captcha, layout change, session expired). |
-| **Headless** (`Run headless` **ON**) | **After** you’ve saved a session with Step 1 — runs without popping a window, good for long queues. The app blocks **Start** in headless mode until you’re logged in (saved session). |
-
-**Practical order:**
-
-1. Install prerequisites → open app → **Step 1 — Log into TradingView** → confirm session saved.  
-2. Run a **short** job with **headless OFF** and confirm pairs complete and **`output/`** gets new files.  
-3. Turn **headless ON** for longer unattended runs.
-
-For **CLI** scans (`run_scan.py` / `run_deep_scan.py`), `config/config.yaml` has **`headless: true`** by default. Set **`headless: false`** (or use flags where available) until you’re confident the session file works, then switch to headless for routine runs.
+- Roughly **one Excel file per strategy** run pattern (see filenames in `output/`).
+- Everything lands under **`output/`** next to the app (or next to the exe if you use a build).
+- Data is written **as pairs finish**, not a single save at the end.
 
 ---
 
-## Packaged app (no Python)
+## Headless mode
 
-If you **build** or **receive** **`WatchlistScanner.exe`**
+- **Visible:** use when you set things up, debug, or TradingView kicks you to a login wall.
+- **Headless:** use after **Step 1** saved a session. Good for long queues with no window.
 
-1. Unzip the **entire** `WatchlistScanner` folder.  
-2. Run **`WatchlistScanner.exe`**.  
-3. Still do **Step 1 — Log into TradingView** on the Runs tab before headless queue runs.  
-4. Users still need a **TradingView** paid plan and **Chrome** (or your configured browser channel).
-
-To build: run **`build.bat`**, then zip **`dist\WatchlistScanner`**. Details below.
-
----
-
-## Using the desktop app
-
-| Area | Purpose |
-|------|--------|
-| **Queue** | Add or edit chart URLs, optional fields, deep backtest option, all pairs vs **top 300** by market cap. |
-| **Runs** | Step 1 login, **headless** toggle, **Start** / **Stop**, progress, resume after restart. |
-| **Results** | Browse and open **`.xlsx`** / **`.html`** outputs. |
-
-Queue and history live in **`data/watchlist.db`**. To pull strategies from YAML into the queue, use **Import from config** in the app.
-
----
-
-## Chart URLs
-
-Each entry must be a **TradingView chart** URL with **your strategy already on the chart**.
-
-1. Open the chart, attach the strategy, set parameters.  
-2. Copy the browser URL.  
-3. Paste into the **Queue** (or under **`strategies`** in `config/config.yaml`).
-
-```yaml
-strategies:
-  - url: "https://www.tradingview.com/chart/xxxxx/?symbol=BYBIT:BTCUSDT"
-    name: "ma_crossover"
-  - url: "https://www.tradingview.com/chart/yyyyy/?symbol=BYBIT:ETHUSDT"
-    name: "rsi_reversal"
-```
-
-More options (delays, browser channel, paths) are in **`config/config.yaml`**.
-
----
-
-## Where results go
-
-- **One Excel file per strategy** (typical columns: symbol, net profit, drawdown, Sharpe, Sortino, win rate, …).  
-- **`output/`** next to the app (or inside the unzipped `WatchlistScanner` folder).  
-- Progress is written **incrementally** so an interrupted run keeps completed rows.
-
----
-
-## Command line (no UI)
-
-After installing prerequisites:
-
-```bash
-python run_scan.py          # small test (few pairs)
-python run_scan.py --full   # all Bybit USDT perps
-```
-
-Two-phase / Pass 2 workflows: [Advanced: CLI & two-phase scans](#advanced-cli--two-phase-scans).
+The **Runs** tab has the **Run headless** toggle. If headless **Start** refuses to run, you are missing a saved session. Do **Step 1** again or run visible once.
 
 ---
 
 ## Troubleshooting
 
-| Issue | What to try |
-|-------|-------------|
-| **Headless won’t start** | Do **Step 1** until session is saved; or turn **headless OFF** and run once visibly. |
-| **Stuck / no progress** | **Stop** → turn **headless OFF** → **Start** to see the browser; re-run **Step 1** if TradingView signed you out. |
-| **Rate limits / flakiness** | Increase **`delay_between_symbols_sec`** in `config/config.yaml` (e.g. `5`). |
-| **UI / selectors break** | TradingView changes pages sometimes — may need updates in `src/scraper.py`. |
+| Issue | Fix |
+|-------|-----|
+| **Headless will not start** | Complete **Step 1** so `tv_session.json` exists. Or turn headless off and run once visible. |
+| **Stuck / no progress** | **Stop**, headless **off**, **Start** again and watch the browser. Check `delay_between_symbols_sec` in `config/config.yaml` if it feels rushed. |
+| **TradingView signed out** | Run **Step 1** again. Session files expire or get invalidated like any browser login. |
+| **Layout broke / scraper fails** | TradingView changes the DOM. Fixes live in `src/scraper.py`. No shame, they move buttons. |
+| **Rate limits / flaky runs** | Raise **`delay_between_symbols_sec`** in `config/config.yaml` (try `5`). |
 
 ---
 
-## Advanced: CLI & two-phase scans
+## Advanced
 
-**Phase 1** — `run_scan.py`: chart date range → `output/strategy_NN_*_scan_*.xlsx` (+ HTML).  
+**Packaged exe**
 
-**Phase 2** — `run_deep_scan.py`: filters Phase 1, re-runs **entire history** on survivors → `*_deep_scan_*`. See `src/pass2_filter.py`.
+Build with **`build.bat`**. You get `dist/WatchlistScanner/` with **`WatchlistScanner.exe`**, a `config/` folder, and runtime `output/` and `data/`. Zip the **whole** folder for someone else. They still need TradingView paid + Chrome. They still do **Step 1** before trusting headless.
 
-Strategy index **N** is **1-based** (first chart in config = `1`).
+**CLI scans**
+
+After the same prerequisite install:
+
+```bash
+python run_scan.py          # few pairs, quick sanity check
+python run_scan.py --full   # all Bybit USDT perps in config
+```
+
+Custom config:
+
+```bash
+python run_scan.py --config my_config.yaml --test
+```
+
+**Two-phase scans**
+
+Phase 1: `run_scan.py` writes `output/strategy_NN_*_scan_*.xlsx`. Phase 2: `run_deep_scan.py` filters Phase 1, then deep pass. Strategy index **N** is **1-based** (first chart in `config.yaml` is `1`).
 
 ```bash
 python run_scan.py --full --strategy 5
 python run_deep_scan.py --strategy 5
 ```
 
-Run Phase 2 only after Phase 1 produced the latest `strategy_05_*_scan_*.xlsx` for that chart.
+Only run Phase 2 after Phase 1 produced the matching `strategy_05_*_scan_*.xlsx`.
 
-```bash
-python run_scan.py --config my_config.yaml --test
-```
-
----
-
-## Building a standalone app
+**Standalone pack command**
 
 ```bash
 flet pack run_ui.py -n WatchlistScanner -D --add-data "config;config"
 ```
 
-Or double-click **`build.bat`**. Output: **`dist/WatchlistScanner/`** with `WatchlistScanner.exe`, `config/`, and folders for `output/` and `data/` at runtime. Zip the **whole** folder for distribution.
+**Config example** (`config/config.yaml`)
 
----
+```yaml
+strategies:
+  - url: "https://www.tradingview.com/chart/xxxxx/?symbol=BYBIT:BTCUSDT"
+    name: "ma_crossover"
+```
 
-## For contributors
+**Maintainers**
 
-- Debug with **visible** browser and **`headless: false`** until flows are stable.  
-- Login / session: `src/tv_login.py`, `config/tv_session.json` (gitignored).  
-- Selector issues: `src/scraper.py`.
+When debugging, use visible browser and `headless: false` in `config/config.yaml` until stable. Queue state lives in **`data/watchlist.db`**.
